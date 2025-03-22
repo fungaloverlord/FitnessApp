@@ -21,6 +21,7 @@ class DashTable:
             id=self.table_id,
             columns=self.columns,
             data=self.data,
+            data_previous=self.data,
             row_deletable=True,
             style_table={
                 "position": self.position,
@@ -39,15 +40,13 @@ class DashTable:
                 'zIndex': 2
             },
             style_cell={"textAlign": "left", "padding": "10px", "border": "1px solid black"},
-            editable=True
+            editable=True,
         )
 
 # Actual Layout
 def database_layout():
-
-    table = DashTable(df=fetch_data("entries"),table_id="editable_table", height="300px").create_table()
+    table = DashTable(df=fetch_data("entries"),table_id="editable_table", height="600px").create_table()
     table1 = DashTable(df=fetch_data("foods"),table_id="editable_table1",top="650px").create_table()
-
     return html.Div([
         html.H3("Database Contents", style={"textAlign": "center"}),
         table,
