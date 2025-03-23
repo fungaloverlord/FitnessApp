@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 import os
-
+from datetime import datetime
 
 # Convert to absolute path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,34 +23,50 @@ def fetch_data(table: str):
         print(f"Error fetching data from {table}: {e}")
         raise
 
-
 def update_database(data, table_name: str):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        #get delete rows and deletes
+        # Convert input data to DataFrame
         df_new = pd.DataFrame(data)
-        existing_ids = pd.read_sql_query(f"SELECT id FROM {table_name}", conn)['id'].tolist()
-        new_ids = df_new['id'].tolist()
-        deleted_ids = set(existing_ids) - set(new_ids)
 
-        for id in deleted_ids:
-            cursor.execute(f"DELETE FROM {table_name} WHERE id = ?", (id,))
+        # Fetch existing data from the database
+        existing_data = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+
+        # Identify rows to delete (based on actual data differences, not just IDs)
+        merged_data = existing_data.merge(df_new, on="id", how="left", indicator=True)
+        deleted_rows = merged_data[merged_data['_merge'] == 'left_only']
+
+        # Perform deletions if necessary
+        for _, row in deleted_rows.iterrows():
+            cursor.execute(f"DELETE FROM {table_name} WHERE id = ?", (row['id'],))
 
         # Perform updates or inserts
-        for row in data:
-            # Extract column names and values
-            columns = ", ".join(f"{k} = ?" for k in row.keys() if k != "id")
-            values = [v for k, v in row.items() if k != "id"]
-            values.append(row["id"])
+        for _, row in df_new.iterrows():
+            # Check if the record already exists
+            cursor.execute(f"SELECT COUNT(1) FROM {table_name} WHERE id = ?", (row["id"],))
+            exists = cursor.fetchone()[0]
 
-            # Perform an SQL update using primary key (assuming "id" is the primary key)
-            cursor.execute(f"""
-                        UPDATE {table_name}
-                        SET {columns}
-                        WHERE id = ?
-                    """, values)
+            if exists:
+                # Update existing record
+                columns = ", ".join(f"{k} = ?" for k in row.index if k != "id")
+                values = [row[k] for k in row.index if k != "id"]
+                values.append(row["id"])
+                cursor.execute(f"""
+                    UPDATE {table_name}
+                    SET {columns}
+                    WHERE id = ?
+                """, values)
+            else:
+                # Insert new record
+                columns = ", ".join(row.index)
+                placeholders = ", ".join(["?" for _ in row.index])
+                values = list(row)
+                cursor.execute(f"""
+                    INSERT INTO {table_name} ({columns})
+                    VALUES ({placeholders})
+                """, values)
 
         conn.commit()
     except Exception as e:
@@ -60,9 +76,14 @@ def update_database(data, table_name: str):
         conn.close()
 
 
-def add_new_food(new_id, food, weight, fat, carbs, protein):
+def add_new_food(food, weight, fat, carbs, protein):
     conn = get_db_connection()
     cursor = conn.cursor()
+    food_data = fetch_data('foods')
+    if 'id' in food_data.columns:
+        new_id = str(max([int(x) for x in fetch_data('foods')['id']]) + 1)
+    else:
+        new_id = '1'
 
     cursor.execute("""
         INSERT INTO foods (id, food, weight, fat, carbs, protein)
@@ -72,6 +93,22 @@ def add_new_food(new_id, food, weight, fat, carbs, protein):
     conn.commit()
     conn.close()
 
+def add_new_entry(meal,food, weight):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    food_data = fetch_data('entries')
+    if 'id' in food_data.columns:
+        new_id = str(max([int(x) for x in fetch_data('entries')['id']]) + 1)
+    else:
+        new_id = '1'
+
+    cursor.execute("""
+        INSERT INTO entries (id, food, weight, entry_date, meal)
+        VALUES (?, ?, ?, ?, ?)
+    """, (new_id, food, weight, datetime.now().strftime("%m-%d-%Y"),meal))
+
+    conn.commit()
+    conn.close()
 
 def get_foods():
     try:
@@ -154,14 +191,14 @@ def add_triggers():
     ''')
     conn.commit()
 
-def change(query):
-    print(fetch_data("foods"))
+def sql(query):
+    print(fetch_data("entries"))
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(query)
     conn.commit()
     conn.close()
-    print(fetch_data("foods"))
+    print(fetch_data("entries"))
 
 # remove_all_triggers()
 # add_triggers()
