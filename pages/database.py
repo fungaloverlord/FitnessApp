@@ -79,12 +79,27 @@ def database_layout():
             html.Button('Add Meal', id='add-meal-btn', n_clicks=0),
         ], style={'display': 'flex', 'alignItems': 'center', 'gap': '5px'}),
         html.Div(id='output-message-entry')
-    ], style={'position': 'relative', 'top': 10,'width':1200})
+    ], style={'position': 'relative', 'top': '10px','width':'1200px'})
 
+    tabs = html.Div([
+    dcc.Tabs(id="tabs", value='tab-1', children=[
+        dcc.Tab(label='Daily', value='tab-1'),
+        dcc.Tab(label='Weekly', value='tab-2'),
+    ]),
+    html.Div(id='tabs-content')
+
+],style={'position': 'relative','top': '50px','width': '1200px'})
     return html.Div([
         html.H3("Database Contents", style={"textAlign": "center"}),
         table,
         table1,
         foods_entry_form,
-        meal_entry_form
+        meal_entry_form,
+        tabs
+    ], style={"position": "relative", "height": "90vh"})
+
+def tab1_layout():
+
+    return html.Div([
+
     ], style={"position": "relative", "height": "90vh"})
