@@ -2,6 +2,8 @@ import sqlite3
 import pandas as pd
 import os
 from datetime import datetime
+import plotly.graph_objects as go
+
 
 # Convert to absolute path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -192,14 +194,85 @@ def add_triggers():
     conn.commit()
 
 def sql(query):
-    print(fetch_data("entries"))
+    conn = get_db_connection()
+    return pd.read_sql_query(query,conn)
+
+
+def daily_macros():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(query)
-    conn.commit()
-    conn.close()
-    print(fetch_data("entries"))
+    date = datetime.now().strftime("%m-%d-%Y")
+    query = f"""
+        SELECT 
+        foods.food,
+        foods.fat * (entries.weight / foods.weight) AS fat,
+        foods.carbs * (entries.weight / foods.weight) AS carb,
+        foods.protein * (entries.weight / foods.weight) AS protein,
+        ROUND(foods.fat * 9.0 * (entries.weight / foods.weight), 2) + 
+        ROUND(foods.carbs * 4.0 * (entries.weight / foods.weight), 2) + 
+        ROUND(foods.protein * 4.0 * (entries.weight / foods.weight), 2) as total
+        FROM entries
+        LEFT JOIN foods
+        ON entries.food = foods.food
+        WHERE entry_date = '{date}';
+    """
+    return pd.read_sql_query(query,conn)
 
-# remove_all_triggers()
-# add_triggers()
-# list_triggers("foods")
+
+
+def create_gauge_figure():
+    target_calories = 2200
+    consumed_calories = sum(daily_macros().total)
+
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=consumed_calories,
+        title={"text": "Calories Consumed"},
+        gauge={
+            'axis': {'range': [0, target_calories]},
+            'bar': {'color': "#9678b6"},
+            'bgcolor': "#353839",
+            'borderwidth': 2,
+            'bordercolor': "#000000",
+        },
+        number={"font": {"color": "#9678b6"}},
+    ))
+    fig.update_layout( font_color="#9678b6", height=300)
+    return fig
+
+def create_macro_figure(consumed, target, label, color):
+    consumed_display = min(consumed, target)
+    remaining_display = max(target - consumed, 0)  # Prevent negative values
+
+    fig = go.Figure()
+
+    # Add consumed bar (caps at full if over threshold)
+    fig.add_trace(go.Bar(
+        x=[consumed_display],
+        y=[label],
+        orientation='h',
+        marker_color=color if consumed <= target else "#ff4d4d",  # Red if exceeded
+        name='Consumed'
+    ))
+
+    # Add remaining bar only if there's remaining space
+    if remaining_display > 0:
+        fig.add_trace(go.Bar(
+            x=[remaining_display],
+            y=[label],
+            orientation='h',
+            marker_color='#8b8589',
+            name='Remaining'
+        ))
+
+    fig.update_layout(
+        barmode='stack',
+        plot_bgcolor="#ffffff",
+        font_color="#fff",
+        height=190,
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=True, showticklabels=False),
+        showlegend=False,  # Hide legend
+    )
+
+    return fig

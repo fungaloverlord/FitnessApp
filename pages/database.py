@@ -1,8 +1,6 @@
 from dash import html, dash_table, dcc
 from db_utils import *
 
-
-
 #class to make tables all look the same
 class DashTable:
     def __init__(self, df, table_id, position="fixed", top="75px", right="20px", width="675px", height="500px"):
@@ -44,12 +42,13 @@ class DashTable:
         )
 
 
+
 # Actual Layout
 def database_layout():
     table = DashTable(df=fetch_data("entries"),table_id="editable_table").create_table()
     table1 = DashTable(df=fetch_data("foods"),table_id="editable_table1",top="620px").create_table()
     foods_entry_form = html.Div([
-        html.H3('New food'),
+        html.H3('New Food'),
         html.Div([
             html.Label('Food:'),
             dcc.Input(id='food', type='text'),
@@ -87,8 +86,8 @@ def database_layout():
         dcc.Tab(label='Weekly', value='tab-2'),
     ]),
     html.Div(id='tabs-content')
+    ],style={'position': 'relative','top': '50px','width': '1200px'})
 
-],style={'position': 'relative','top': '50px','width': '1200px'})
     return html.Div([
         html.H3("Database Contents", style={"textAlign": "center"}),
         table,

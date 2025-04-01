@@ -1,5 +1,6 @@
-from dash import Input, Output, State, html
-from db_utils import update_database, fetch_data, add_new_food,add_new_entry
+from dash import Input, Output, State, html, dcc
+from db_utils import update_database, add_new_food, add_new_entry, create_gauge_figure, create_macro_figure, daily_macros
+
 
 def register_callbacks(app):
     # Callback for modifying the main entries table and foods table
@@ -38,6 +39,7 @@ def register_callbacks(app):
          State('carbs', 'value'),
          State('proteins', 'value')]
     )
+
     def add_food(n_clicks, food, weight, fats, carbs, proteins):
         if n_clicks > 0:
             # Check if all fields have values
@@ -93,11 +95,34 @@ def register_callbacks(app):
 
     @app.callback(Output('tabs-content', 'children'),
               Input('tabs', 'value'))
+
     def render_content(tab):
+        target_calories = 2200
+        consumed_calories = sum(daily_macros().total)
+        remaining_calories = target_calories - consumed_calories
+
+        protein_target = 175
+        fat_target = target_calories * .2 / 9
+
+        carbs_target = target_calories * .48 / 4
+        print(carbs_target)
         if tab == 'tab-1':
             return html.Div([
-                html.H3('Tab content 1')
-            ])
+                html.H3('Daily Nutrition'),
+                    html.Div([
+                        dcc.Graph(figure=create_macro_figure(sum(daily_macros().protein), protein_target, 'Protein', '#f28500'),
+                                  style={"position": 'fixed', 'width': 300, 'top': 550, 'left': 535}),
+                        html.Label('Protein', style={"position": 'fixed', 'width': 300, 'top': 665, 'left': 655}),
+                        dcc.Graph(figure=create_macro_figure(sum(daily_macros().fat), fat_target, 'Fat', '#ffcc00'),
+                                  style={"position": 'fixed', 'width': 300, 'top': 550, 'left': 750}),
+                        html.Label('Fat', style={"position": 'fixed', 'width': 300, 'top': 665, 'left': 880}),
+                        dcc.Graph(figure=create_macro_figure(sum(daily_macros().carb), carbs_target, 'Carbs', '#00cc66'),
+                                  style={"position": 'fixed', 'width': 300, 'top': 550, 'left': 965}),
+                        html.Label('Carb', style={"position": 'fixed', 'width': 300, 'top': 665, 'left': 1095}),
+                    ], style={'display': 'flex'}),
+                    dcc.Graph(figure=create_gauge_figure(),
+                              style={"position": 'fixed', 'top': 350, 'left': 700, 'width': 400}),
+                ])
         elif tab == 'tab-2':
             return html.Div([
                 html.H3('Tab content 2')

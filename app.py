@@ -40,7 +40,7 @@ def display_page(pathname):
         return html.H3("An error occurred. Please try again.")
 
 
-# Register callbacks for interactivity (EXCEPT page-content updates)
+# Register callbacks for interactivity (EXCEPT page-content updates)???
 register_callbacks(app)
 
 if __name__ == "__main__":
