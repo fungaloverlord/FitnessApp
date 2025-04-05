@@ -237,7 +237,12 @@ def create_gauge_figure():
         },
         number={"font": {"color": "#9678b6"}},
     ))
-    fig.update_layout( font_color="#9678b6", height=300)
+    fig.update_layout(
+        font_color="#9678b6",
+        height=300,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
     return fig
 
 def create_macro_figure(consumed, target, label, color):
@@ -267,7 +272,8 @@ def create_macro_figure(consumed, target, label, color):
 
     fig.update_layout(
         barmode='stack',
-        plot_bgcolor="#ffffff",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
         font_color="#fff",
         height=190,
         xaxis=dict(visible=False),

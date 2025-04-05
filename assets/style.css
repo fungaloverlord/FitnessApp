@@ -2,3 +2,43 @@
     background-color: #9678b6 !important;
     color: #FFFFFF !important;
 }
+
+/* Enforce horizontal layout for larger screens */
+.responsive-row {
+    display: flex !important; /* Flex layout applied */
+    flex-direction: row !important; /* Horizontal layout */
+    justify-content: flex-start; /* Align items side by side */
+    align-items: flex-start; /* Align items at the top */
+    width: 100%; /* Full row width */
+}
+
+.responsive-column {
+    box-sizing: border-box;
+    padding: 0px;
+}
+
+.responsive-column:first-child {
+    width: 65% !important; /* First column occupies 65% */
+
+}
+
+.responsive-column:nth-child(2) {
+    width: 35% !important; /* Second column occupies 35% */
+}
+
+/* Responsive layout for smaller screens */
+@media screen and (max-width: 768px) {
+    .responsive-row {
+
+        flex-direction: column !important; /* Switch to vertical layout */
+        gap: 900px; /* Spacing between stacked items */
+        align-items: stretch; /* Full width alignment */
+    }
+
+    .responsive-column {
+        width: 100% !important; /* Full width for stacked columns */
+    }
+    .responsive-column;nth-child(2) {
+    margin-top: 300px;
+    }
+}

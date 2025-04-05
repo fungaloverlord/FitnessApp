@@ -3,7 +3,7 @@ from db_utils import *
 
 #class to make tables all look the same
 class DashTable:
-    def __init__(self, df, table_id, position="fixed", top="75px", right="20px", width="675px", height="500px"):
+    def __init__(self, df, table_id, position="relative", top="0px", right="0px", width="675px", height="500px" ):
         self.df = df
         self.table_id = table_id
         self.columns = [{"name": i, "id": i, "editable": True} for i in df.columns]
@@ -46,7 +46,9 @@ class DashTable:
 # Actual Layout
 def database_layout():
     table = DashTable(df=fetch_data("entries"),table_id="editable_table").create_table()
-    table1 = DashTable(df=fetch_data("foods"),table_id="editable_table1",top="620px").create_table()
+    table1 = DashTable(df=fetch_data("foods"),table_id="editable_table1").create_table()
+
+    # entry forms
     foods_entry_form = html.Div([
         html.H3('New Food'),
         html.Div([
@@ -80,6 +82,7 @@ def database_layout():
         html.Div(id='output-message-entry')
     ], style={'position': 'relative', 'top': '10px','width':'1200px'})
 
+    # Tab setup
     tabs = html.Div([
     dcc.Tabs(id="tabs", value='tab-1', children=[
         dcc.Tab(label='Daily', value='tab-1'),
@@ -88,14 +91,34 @@ def database_layout():
     html.Div(id='tabs-content')
     ],style={'position': 'relative','top': '50px','width': '1200px'})
 
-    return html.Div([
-        html.H3("Database Contents", style={"textAlign": "center"}),
-        table,
-        table1,
-        foods_entry_form,
-        meal_entry_form,
-        tabs
-    ], style={"position": "relative", "height": "90vh"})
+    return (
+        html.Div(
+            className="responsive-row",  # Apply the responsive-row class for the parent div
+            children=[
+                # First Column
+                html.Div(
+                    className="responsive-column",  # Apply the responsive-column class for the first column
+                    children=[
+                        html.H3("Database Contents", style={"textAlign": "center"}),
+                        foods_entry_form,
+                        meal_entry_form,
+                        tabs
+                    ]
+                ),
+                # Second Column
+                html.Div(
+                    className="responsive-column",  # Apply the responsive-column class for the second column
+                    children=[
+                        html.H3("Tables"),
+                        html.H5("Entries", style={"padding": 10}),
+                        table,
+                        html.H5("Foods", style={"padding": 10}),
+                        table1,
+                    ]
+                )
+            ]
+        )
+    )
 
 def tab1_layout():
 
