@@ -85,8 +85,8 @@ def database_layout():
     # Tab setup
     tabs = html.Div([
     dcc.Tabs(id="tabs", value='tab-1', children=[
-        dcc.Tab(label='Daily', value='tab-1'),
-        dcc.Tab(label='Weekly', value='tab-2'),
+        dcc.Tab(label='Daily', value='tab-1', selected_style={'borderTop': '3px solid #9678b6'}),
+        dcc.Tab(label='Weekly', value='tab-2', selected_style={'borderTop': '3px solid #9678b6'}),
     ]),
     html.Div(id='tabs-content')
     ],style={'position': 'relative','top': '50px','width': '1200px'})
@@ -119,9 +119,3 @@ def database_layout():
             ]
         )
     )
-
-def tab1_layout():
-
-    return html.Div([
-
-    ], style={"position": "relative", "height": "90vh"})

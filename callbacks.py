@@ -1,5 +1,5 @@
 from dash import Input, Output, State, html, dcc
-from db_utils import update_database, add_new_food, add_new_entry, create_gauge_figure, create_macro_figure, daily_macros
+from db_utils import *
 
 
 def register_callbacks(app):
@@ -44,7 +44,7 @@ def register_callbacks(app):
         if n_clicks > 0:
             # Check if all fields have values
             if not all(i is not None for i in [food, weight, carbs, proteins, fats]):
-                return html.Em('Please fill in all fields.', style={'position': 'relative', 'top': 80, 'left': 450,'color': 'red'})
+                return html.Em('Please fill in all fields.', style={'position': 'relative', 'top': 68, 'left': 450,'color': 'red'})
 
             try:
                 # Ensure that weight, carbs, proteins, and fats are converted to numbers
@@ -55,16 +55,16 @@ def register_callbacks(app):
                 # Call the function to add the new food
                 add_new_food(food, weight, fats, carbs, proteins)
 
-                return html.Em('Meal added successfully!', style={'position': 'fixed', 'top': 80, 'left': 450,'color': 'green'})
+                return html.Em('Meal added successfully!', style={'position': 'fixed', 'top': 68, 'left': 450,'color': 'green'})
 
             except ValueError:
                 return html.Em('Please enter valid numerical values for weight, carbs, proteins, and fats.',
-                               style={'position': 'fixed', 'top': 80, 'left': 450,'color': 'red'})
+                               style={'position': 'fixed', 'top': 68, 'left': 450,'color': 'red'})
 
             except Exception as e:
-                return html.Em(f'Error adding meal: {e}', style={'position': 'fixed', 'top': 80, 'left': 450,'color': 'red'})
+                return html.Em(f'Error adding meal: {e}', style={'position': 'fixed', 'top': 68, 'left': 450,'color': 'red'})
 
-        return html.Em('Ready', style={'position': 'fixed', 'top': 80, 'left': 450,'color': 'purple'})
+        return html.Em('Ready', style={'position': 'fixed', 'top': 68, 'left': 450,'color': 'purple'})
 
     @app.callback(
         Output('output-message-entry', 'children'),
@@ -77,21 +77,21 @@ def register_callbacks(app):
         if n_clicks > 0:
             # Check if all fields have values
             if not all([meal, food, weight]):
-                return html.Em('Please fill in all fields.', style={'position': 'fixed','top':165,'left':450,'color': 'red'})
+                return html.Em('Please fill in all fields.', style={'position': 'fixed','top':152,'left':450,'color': 'red'})
 
             try:
                 # Convert inputs to float where applicable
                 add_new_entry(meal=meal, food=food, weight=float(weight))
 
-                return html.Em('Meal added successfully!', style={'position': 'fixed','top':165,'left':450,'color': 'green'})
+                return html.Em('Meal added successfully!', style={'position': 'fixed','top':152,'left':450,'color': 'green'})
 
             except ValueError:
-                return html.Em('Please enter valid numerical values for weight.', style={'position': 'fixed','top':165,'left':450,'color': 'red'})
+                return html.Em('Please enter valid numerical values for weight.', style={'position': 'fixed','top':152,'left':450,'color': 'red'})
 
             except Exception as e:
-                return html.Em(f'Error adding meal: {e}', style={'position': 'fixed','top':165,'left':450,'color': 'red'})
+                return html.Em(f'Error adding meal: {e}', style={'position': 'fixed','top':152,'left':450,'color': 'red'})
 
-        return html.Em('Ready', style={'position': 'fixed','top':165,'left':450,'color': 'purple'})
+        return html.Em('Ready', style={'position': 'fixed','top':152,'left':450,'color': 'purple'})
 
     @app.callback(Output('tabs-content', 'children'),
               Input('tabs', 'value'))
@@ -105,7 +105,6 @@ def register_callbacks(app):
         fat_target = target_calories * .2 / 9
 
         carbs_target = target_calories * .48 / 4
-        print(carbs_target)
         if tab == 'tab-1':
             drop = 500
             bar_drop = drop + 180
@@ -132,7 +131,10 @@ def register_callbacks(app):
                 ])
         elif tab == 'tab-2':
             return html.Div([
-                html.H3('Tab content 2')
+                html.H3('Tab 2'),
+                dcc.Graph(figure=create_weight_chart(),
+                          style={'position':'relative',"top": 0},
+                          config={"displayModeBar": False, "scrollZoom": False, "doubleClick": "reset", },)
             ])
 
 

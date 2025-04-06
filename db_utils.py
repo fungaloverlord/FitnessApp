@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import plotly.graph_objects as go
 
 
@@ -105,9 +105,9 @@ def add_new_entry(meal,food, weight):
         new_id = '1'
 
     cursor.execute("""
-        INSERT INTO entries (id, food, weight, entry_date, meal)
-        VALUES (?, ?, ?, ?, ?)
-    """, (new_id, food, weight, datetime.now().strftime("%m-%d-%Y"),meal))
+        INSERT INTO entries (id, food, weight, entry_date, meal, user)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (new_id, food, weight, datetime.now().strftime("%Y-%m-%d"),meal,"Steven Joy"))
 
     conn.commit()
     conn.close()
@@ -198,10 +198,40 @@ def sql(query):
     return pd.read_sql_query(query,conn)
 
 
+
+query = '''
+SELECT 
+    CASE 
+        WHEN user_weight.date = derived_table.date THEN user_weight.weight 
+        ELSE NULL 
+    END AS weight,
+    CASE 
+        WHEN user_weight.date = derived_table.date THEN user_weight.date 
+        ELSE NULL 
+    END AS date,
+    derived_table.calories, 
+    derived_table.date AS entry_date
+FROM user_weight
+LEFT JOIN (
+    SELECT 
+        entries.entry_date AS date, 
+        entries.user, 
+        SUM(
+            ROUND(foods.fat * 9.0 * (entries.weight / foods.weight), 2) +
+            ROUND(foods.carbs * 4.0 * (entries.weight / foods.weight), 2) +
+            ROUND(foods.protein * 4.0 * (entries.weight / foods.weight), 2)
+        ) AS calories
+    FROM entries
+    LEFT JOIN foods
+    ON entries.food = foods.food
+    GROUP BY entries.entry_date, entries.user
+) AS derived_table
+ON user_weight.user = derived_table.user;
+    '''
+
 def daily_macros():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    date = datetime.now().strftime("%m-%d-%Y")
+    date = datetime.now().strftime("%Y-%m-%d")
     query = f"""
         SELECT 
         foods.food,
@@ -282,3 +312,99 @@ def create_macro_figure(consumed, target, label, color):
     )
 
     return fig
+
+def create_weight_chart():
+
+    query = '''
+        SELECT 
+        user_weight.weight,
+        derived_table.calories, 
+        derived_table.date AS date
+        FROM user_weight
+        RIGHT JOIN (
+            SELECT 
+                entries.entry_date AS date, 
+                entries.user, 
+                SUM(
+                    ROUND(foods.fat * 9.0 * (entries.weight / foods.weight), 2) +
+                    ROUND(foods.carbs * 4.0 * (entries.weight / foods.weight), 2) +
+                    ROUND(foods.protein * 4.0 * (entries.weight / foods.weight), 2)
+                ) AS calories
+            FROM entries
+            LEFT JOIN foods
+            ON entries.food = foods.food
+            GROUP BY entries.entry_date, entries.user
+        ) AS derived_table
+        ON user_weight.date = derived_table.date
+        ORDER BY date;
+    '''
+    data = sql(query)
+
+    # Filter data for the last 7 days
+    last_7_days = datetime.now() - timedelta(days=7)
+    filtered_data = data[pd.to_datetime(data['date']) >= last_7_days]
+
+    # Calculate the average weight for the filtered data
+    avg_weight = filtered_data['weight'].dropna().mean()
+    # Create the figure
+    fig = go.Figure()
+
+    # Add weight line
+    fig.add_trace(go.Scatter(
+     x=data['date'],
+     y=data['weight'],
+     mode='lines+markers',
+     name='Weight',
+     yaxis='y2',
+    line=dict(color='#b19cd9')
+    ))
+
+    # Add calories line
+    fig.add_trace(go.Scatter(
+     x=data['date'],
+     y=data['calories'],
+     mode='lines+markers',
+     name='Calories',
+    line=dict(color='#43b3ae')
+    ))
+
+    # Add an annotation for the average weight
+    fig.add_annotation(
+        text=f"Trend Weight: {avg_weight:.2f}",
+        xref="paper",  # Use the paper coordinate system for a fixed location
+        yref="paper",
+        x=0.5,  # Centered horizontally
+        y=1.1,  # Slightly above the graph
+        showarrow=False,
+        font=dict(size=14, color="black")
+    )
+
+    # Customize layout
+    fig.update_layout(
+     title='Weight and Calories Over Time',
+     xaxis_title='Date',
+     yaxis_title='Calories',
+     yaxis=dict(
+         title='Calories',
+         side='left'
+     ),
+     yaxis2=dict(
+         title='Weight',
+         overlaying='y',
+         side='right'
+     ),
+     xaxis=dict(
+         rangeselector=dict(
+             buttons=list([
+                 dict(count=7, label="Last 7 Days", step="day", stepmode="backward"),
+                 dict(count=1, label="Last Month", step="month", stepmode="backward"),
+                 dict(count=1, label="Year to Date", step="year", stepmode="todate"),
+                 dict(step="all", label="All Time")
+             ])
+         ),
+         rangeslider=dict(visible=True)  # Enable the range slider
+     ),
+     legend=dict(x=1.05, y=1, xanchor='left', yanchor='top'),
+    )
+    return fig
+
