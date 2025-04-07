@@ -107,7 +107,7 @@ def register_callbacks(app):
         carbs_target = target_calories * .48 / 4
         if tab == 'tab-1':
             drop = 500
-            bar_drop = drop + 180
+            bar_drop = drop + 200
             label_drop = bar_drop + 115
             return html.Div([
                 html.H3('Daily Nutrition'),
@@ -131,7 +131,7 @@ def register_callbacks(app):
                 ])
         elif tab == 'tab-2':
             return html.Div([
-                html.H3('Tab 2'),
+                html.H3('Long term Nutrition'),
                 dcc.Graph(figure=create_weight_chart(),
                           style={'position':'relative',"top": 0},
                           config={"displayModeBar": False, "scrollZoom": False, "doubleClick": "reset", },)

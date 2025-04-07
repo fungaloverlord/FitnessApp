@@ -198,37 +198,6 @@ def sql(query):
     return pd.read_sql_query(query,conn)
 
 
-
-query = '''
-SELECT 
-    CASE 
-        WHEN user_weight.date = derived_table.date THEN user_weight.weight 
-        ELSE NULL 
-    END AS weight,
-    CASE 
-        WHEN user_weight.date = derived_table.date THEN user_weight.date 
-        ELSE NULL 
-    END AS date,
-    derived_table.calories, 
-    derived_table.date AS entry_date
-FROM user_weight
-LEFT JOIN (
-    SELECT 
-        entries.entry_date AS date, 
-        entries.user, 
-        SUM(
-            ROUND(foods.fat * 9.0 * (entries.weight / foods.weight), 2) +
-            ROUND(foods.carbs * 4.0 * (entries.weight / foods.weight), 2) +
-            ROUND(foods.protein * 4.0 * (entries.weight / foods.weight), 2)
-        ) AS calories
-    FROM entries
-    LEFT JOIN foods
-    ON entries.food = foods.food
-    GROUP BY entries.entry_date, entries.user
-) AS derived_table
-ON user_weight.user = derived_table.user;
-    '''
-
 def daily_macros():
     conn = get_db_connection()
     date = datetime.now().strftime("%Y-%m-%d")
